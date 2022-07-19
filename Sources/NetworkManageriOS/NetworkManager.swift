@@ -8,8 +8,8 @@ public struct NetworkManageriOS {
     }
 }
 
-enum NetworkManager {
-    static func performRequest<T: Decodable>(_ requestInfo: RequestInfo) async throws -> T {
+public enum NetworkManager {
+    public static func performRequest<T: Decodable>(_ requestInfo: RequestInfo) async throws -> T {
         let urlSession = URLSession.shared
         let request = try createRequest(with: requestInfo)
         let (data, response) = try await urlSession.data(for: request)
