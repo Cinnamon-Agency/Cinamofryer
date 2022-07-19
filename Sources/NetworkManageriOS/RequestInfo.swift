@@ -2,11 +2,11 @@
 import Foundation
 
 public struct RequestInfo {
-    var url: String
-    var method: HttpMethod = .GET
-    var parameters: [String: Any]?
-    var isAuthorized: Bool = false
-    var header: [String: String]?
+    public var url: String
+    public var method: HttpMethod = .GET
+    public var parameters: [String: Any]?
+    public var isAuthorized: Bool = false
+    public var header: [String: String]?
 }
 
 public enum HttpMethod: String {
