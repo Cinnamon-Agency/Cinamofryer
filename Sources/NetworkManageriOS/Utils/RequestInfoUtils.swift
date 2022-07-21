@@ -1,6 +1,6 @@
 import Foundation
 
-protocol RequestInfoUtils {
+public protocol RequestInfoUtils {
     func getParams<T: Codable>(_ value: T) throws -> [String: Any]
 }
 
