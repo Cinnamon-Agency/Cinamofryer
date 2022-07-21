@@ -1,12 +1,4 @@
-
 import Foundation
-
-public struct NetworkManageriOS {
-    public private(set) var text = "Hello, World!"
-
-    public init() {
-    }
-}
 
 public enum NetworkManager {
     public static func performRequest<T: Decodable>(_ requestInfo: RequestInfo) async throws -> T {
@@ -38,6 +30,16 @@ private extension NetworkManager {
 
         return request
     }
+}
+
+private extension NetworkManager {
+    static func encode(_ value: [String: Any]) throws -> Data {
+        guard let parameter = try? JSONSerialization.data(withJSONObject: value, options: []) else {
+            throw NetworkError.failedToEncode
+        }
+
+        return parameter
+    }
 
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
@@ -52,13 +54,5 @@ private extension NetworkManager {
         }
 
         return decodedData.data
-    }
-
-    static func encode(_ value: [String: Any]) throws -> Data {
-        guard let parameter = try? JSONSerialization.data(withJSONObject: value, options: []) else {
-            throw NetworkError.failedToEncode
-        }
-
-        return parameter
     }
 }
