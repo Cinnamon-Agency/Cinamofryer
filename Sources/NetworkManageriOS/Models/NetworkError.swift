@@ -1,6 +1,6 @@
 import Foundation
 
 enum NetworkError: Error {
-    case invalidStatusCode
+    case invalidStatusCode(code: Int)
     case invalidURL
 }

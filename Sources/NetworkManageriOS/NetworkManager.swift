@@ -28,10 +28,19 @@ private extension NetworkManager {
                               parameters: [String: Any]?,
                               contentType: ContentType,
                               headers: [String: String]?) throws -> URLRequest {
-        guard let url = URL(string: url) else { throw NetworkError.invalidURL }
+        guard var components = URLComponents(string: url) else { throw NetworkError.invalidURL }
+    
+        if case .GET(let queryParameters) = method, let queryParameters = queryParameters {
+            components.queryItems = queryParameters.map { (key: String, value: Any) in
+                return URLQueryItem(name: key, value: "\(value)")
+            }
+        }
+        
+        guard let url = components.url else { throw NetworkError.invalidURL }
+        
         var request = URLRequest(url: url)
-        request.httpMethod = method.rawValue
-
+        request.httpMethod = method.raw
+        
         if let parameters = parameters {
             let bodyParams = try NetworkManager.encode(parameters, encoding: contentType.encoding)
             request.httpBody = bodyParams
@@ -64,7 +73,7 @@ private extension NetworkManager {
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
            response.statusCode < 200 || response.statusCode > 300 {
-            throw NetworkError.invalidStatusCode
+            throw NetworkError.invalidStatusCode(code: response.statusCode)
         }
     }
 
@@ -99,11 +108,24 @@ private extension NetworkManager {
 
 // MARK: - HTTPMethod
 
-public enum HTTPMethod: String {
-    case GET
+public enum HTTPMethod {
+    case GET(query: [String: Any]? = nil)
     case POST
     case DELETE
     case PUT
+    
+    var raw: String {
+        switch self {
+        case .GET:
+            return "GET"
+        case .POST:
+            return "POST"
+        case .DELETE:
+            return "DELETE"
+        case .PUT:
+            return "PUT"
+        }
+    }
 }
 
 // MARK: - ContentType
