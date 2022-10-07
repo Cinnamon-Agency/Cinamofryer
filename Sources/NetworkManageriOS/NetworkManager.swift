@@ -19,7 +19,7 @@ public enum NetworkManager {
                                                    data: UploadData,
                                                    requestType: UploadRequestType,
                                                    headers: [String: String]? = nil) async throws -> T {
-        guard method == .POST || method == .PUT else { throw NetworkError.invalidHTTPMethod }
+        guard method == .POST || method == .PUT else { throw NetworkManagerError.invalidHTTPMethod }
         let request = try createUploadRequest(url: url,
                                               method: method,
                                               data: data,
@@ -44,7 +44,7 @@ private extension NetworkManager {
                               parameters: [String: Any]?,
                               contentType: ContentType,
                               headers: [String: String]?) throws -> URLRequest {
-        guard var components = URLComponents(string: url) else { throw NetworkError.invalidURL }
+        guard var components = URLComponents(string: url) else { throw NetworkManagerError.invalidURL }
     
         if case .GET(let queryParameters) = method, let queryParameters = queryParameters {
             components.queryItems = queryParameters.map { (key: String, value: Any) in
@@ -52,7 +52,7 @@ private extension NetworkManager {
             }
         }
         
-        guard let url = components.url else { throw NetworkError.invalidURL }
+        guard let url = components.url else { throw NetworkManagerError.invalidURL }
         
         var request = URLRequest(url: url)
         request.httpMethod = method.raw
@@ -75,7 +75,7 @@ private extension NetworkManager {
                                     data: UploadData,
                                     requestType: UploadRequestType,
                                     headers: [String: String]?) throws -> URLRequest {
-        guard let url = URL(string: url) else { throw NetworkError.invalidURL }
+        guard let url = URL(string: url) else { throw NetworkManagerError.invalidURL }
         
         var request = URLRequest(url: url)
         request.httpMethod = method.raw
@@ -91,9 +91,8 @@ private extension NetworkManager {
             let contentDisposition = "Content-Disposition: form-data; name=\"\(data.name)\""
     
             body.append(Data("--\(boundary)\r\n".utf8))
-            body.append(Data("\(contentDisposition)\r\n".utf8))
+            body.append(Data("\(contentDisposition); filename=\"\(data.name)\(data.fileExtension)\"\r\n".utf8))
             body.append(Data("Content-Type: \(data.mimeType)\r\n".utf8))
-            body.append(Data("Content-Transfer-Encoding: binary\r\n".utf8))
             body.append(Data("\r\n".utf8))
             body.append(data.data)
             body.append(Data("\r\n".utf8))
@@ -130,7 +129,7 @@ private extension NetworkManager {
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
            response.statusCode < 200 || response.statusCode > 300 {
-            throw NetworkError.invalidStatusCode(code: response.statusCode)
+            throw NetworkManagerError.invalidStatusCode(code: response.statusCode)
         }
     }
 
@@ -254,6 +253,13 @@ public enum UploadData {
         switch self {
         case .photo:
             return "image/jpeg"
+        }
+    }
+    
+    var fileExtension: String {
+        switch self {
+        case .photo:
+            return ".jpeg"
         }
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-enum NetworkError: Error {
+enum NetworkManagerError: Error {
     case invalidStatusCode(code: Int)
     case invalidURL
     case invalidHTTPMethod
