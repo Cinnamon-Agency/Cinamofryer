@@ -6,23 +6,39 @@ public enum NetworkManager {
                                              parameters: [String: Any]? = nil,
                                              contentType: ContentType = .JSON,
                                              headers: [String: String]? = nil) async throws -> T {
-        let session = URLSession.shared
         let request = try createRequest(url: url,
                                         method: method,
                                         parameters: parameters,
                                         contentType: contentType,
                                         headers: headers)
-        
-        let (data, response) = try await session.data(for: request)
-        try validate(response)
-        
-        return try result(from: data)
+        return try await run(request: request)
+    }
+
+    public static func uploadRequest<T: Decodable>(url: String,
+                                                   method: HTTPMethod,
+                                                   data: UploadData,
+                                                   requestType: UploadRequestType,
+                                                   headers: [String: String]? = nil) async throws -> T {
+        guard method == .POST || method == .PUT else { throw NetworkError.invalidHTTPMethod }
+        let request = try createUploadRequest(url: url,
+                                              method: method,
+                                              data: data,
+                                              requestType: requestType,
+                                              headers: headers)
+        return try await run(request: request)
     }
 }
 
 // MARK: - Private
 
 private extension NetworkManager {
+    static func run<T: Decodable>(request: URLRequest) async throws -> T {
+        let session = URLSession.shared
+        let (data, response) = try await session.data(for: request)
+        try validate(response)
+        return try result(from: data)
+    }
+    
     static func createRequest(url: String,
                               method: HTTPMethod,
                               parameters: [String: Any]?,
@@ -47,6 +63,48 @@ private extension NetworkManager {
             request.setValue(contentType.rawValue, forHTTPHeaderField: "Content-Type")
         }
 
+        if let headers = headers {
+            request.allHTTPHeaderFields = headers
+        }
+
+        return request
+    }
+    
+    static func createUploadRequest(url: String,
+                                    method: HTTPMethod,
+                                    data: UploadData,
+                                    requestType: UploadRequestType,
+                                    headers: [String: String]?) throws -> URLRequest {
+        guard let url = URL(string: url) else { throw NetworkError.invalidURL }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = method.raw
+        
+        var body = Data()
+        
+        switch requestType {
+        case .binary:
+            // Body
+            body.append(data.data)
+            // Content-Type
+            request.setValue(data.mimeType, forHTTPHeaderField: "Content-Type")
+        case .multipartFormData:
+            let boundary: String = UUID().uuidString
+            let contentDisposition = "Content-Disposition: form-data; name=\"\(data.name)\""
+            // Body
+            body.append(Data("--\(boundary)\r\n".utf8))
+            body.append(Data("\(contentDisposition)\r\n".utf8))
+            body.append(Data("Content-Type: \(data.mimeType)\r\n".utf8))
+            body.append(Data("Content-Transfer-Encoding: binary\r\n\r\n".utf8))
+            body.append(data.data)
+            body.append(Data("\r\n".utf8))
+            body.append(Data("--\(boundary)--\r\n".utf8))
+            // Content-Type
+            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        }
+        
+        request.httpBody = body
+    
         if let headers = headers {
             request.allHTTPHeaderFields = headers
         }
@@ -108,7 +166,7 @@ private extension NetworkManager {
 
 // MARK: - HTTPMethod
 
-public enum HTTPMethod {
+public enum HTTPMethod: Equatable {
     case GET(query: [String: Any]? = nil)
     case POST
     case DELETE
@@ -124,6 +182,21 @@ public enum HTTPMethod {
             return "DELETE"
         case .PUT:
             return "PUT"
+        }
+    }
+    
+    public static func == (lhs: HTTPMethod, rhs: HTTPMethod) -> Bool {
+        switch (lhs, rhs) {
+        case (.GET, .GET):
+            return true
+        case (.POST, .POST):
+            return true
+        case (.DELETE, .DELETE):
+            return true
+        case (.PUT, .PUT):
+            return true
+        default:
+            return false
         }
     }
 }
@@ -149,4 +222,39 @@ public enum ContentType: String {
 public enum ParameterEncoding {
     case JSONEncoding
     case URLEncoding
+}
+
+// MARK: - UploadRequestType
+
+public enum UploadRequestType {
+    case binary
+    case multipartFormData
+}
+
+// MARK: - UploadData
+
+public enum UploadData {
+    case photo(name: String, data: Data)
+    // TODO: case video(name: String, data: Data)
+    
+    var name: String {
+        switch self {
+        case .photo(let name, _):
+            return name
+        }
+    }
+    
+    var data: Data {
+        switch self {
+        case .photo(_, let data):
+            return data
+        }
+    }
+    
+    var mimeType: String {
+        switch self {
+        case .photo:
+            return "img/jpeg"
+        }
+    }
 }
