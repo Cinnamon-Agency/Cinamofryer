@@ -84,22 +84,21 @@ private extension NetworkManager {
         
         switch requestType {
         case .binary:
-            // Body
             body.append(data.data)
-            // Content-Type
             request.setValue(data.mimeType, forHTTPHeaderField: "Content-Type")
         case .multipartFormData:
             let boundary: String = UUID().uuidString
             let contentDisposition = "Content-Disposition: form-data; name=\"\(data.name)\""
-            // Body
+    
             body.append(Data("--\(boundary)\r\n".utf8))
             body.append(Data("\(contentDisposition)\r\n".utf8))
             body.append(Data("Content-Type: \(data.mimeType)\r\n".utf8))
-            body.append(Data("Content-Transfer-Encoding: binary\r\n\r\n".utf8))
+            body.append(Data("Content-Transfer-Encoding: binary\r\n".utf8))
+            body.append(Data("\r\n".utf8))
             body.append(data.data)
             body.append(Data("\r\n".utf8))
             body.append(Data("--\(boundary)--\r\n".utf8))
-            // Content-Type
+            
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         }
         
@@ -254,7 +253,7 @@ public enum UploadData {
     var mimeType: String {
         switch self {
         case .photo:
-            return "img/jpeg"
+            return "image/jpeg"
         }
     }
 }
