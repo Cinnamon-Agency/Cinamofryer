@@ -231,35 +231,30 @@ public enum UploadRequestType {
 
 // MARK: - UploadData
 
-public enum UploadData {
-    case photo(name: String, data: Data)
-    // TODO: case video(name: String, data: Data)
+public struct UploadData {
+    let name: String
+    let data: Data
+    let type: DataType
     
-    var name: String {
-        switch self {
-        case .photo(let name, _):
-            return name
-        }
-    }
-    
-    var data: Data {
-        switch self {
-        case .photo(_, let data):
-            return data
-        }
+    public enum DataType {
+        case jpegPhoto, pngPhoto
     }
     
     var mimeType: String {
-        switch self {
-        case .photo:
+        switch type {
+        case .jpegPhoto:
             return "image/jpeg"
+        case .pngPhoto:
+            return "image/png"
         }
     }
     
     var fileExtension: String {
-        switch self {
-        case .photo:
+        switch type {
+        case .jpegPhoto:
             return ".jpeg"
+        case .pngPhoto:
+            return ".png"
         }
     }
 }
