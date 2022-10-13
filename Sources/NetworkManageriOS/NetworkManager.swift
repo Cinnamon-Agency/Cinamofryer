@@ -1,5 +1,7 @@
 import Foundation
 
+public typealias ProgressHandler = (Double) -> Void
+
 public enum NetworkManager {
     public static func request<T: Decodable>(url: String,
                                              method: HTTPMethod,
@@ -18,23 +20,25 @@ public enum NetworkManager {
                                                    method: HTTPMethod,
                                                    data: UploadData,
                                                    requestType: UploadRequestType,
-                                                   headers: [String: String]? = nil) async throws -> T {
+                                                   headers: [String: String]? = nil,
+                                                   progressHandler: ProgressHandler? = nil) async throws -> T {
         guard method == .POST || method == .PUT else { throw NetworkManagerError.invalidHTTPMethod }
         let request = try createUploadRequest(url: url,
                                               method: method,
                                               data: data,
                                               requestType: requestType,
                                               headers: headers)
-        return try await run(request: request)
+        return try await run(request: request, progressHandler: progressHandler)
     }
 }
 
 // MARK: - Private
 
 private extension NetworkManager {
-    static func run<T: Decodable>(request: URLRequest) async throws -> T {
+    static func run<T: Decodable>(request: URLRequest, progressHandler: ProgressHandler? = nil) async throws -> T {
         let session = URLSession.shared
-        let (data, response) = try await session.data(for: request)
+        let delegate = (progressHandler == nil) ? nil : NetworkManagerUploadProgressHandler(handler: progressHandler)
+        let (data, response) = try await session.data(for: request, delegate: delegate)
         try validate(response)
         return try result(from: data)
     }
@@ -256,5 +260,19 @@ public struct UploadData {
         case .pngPhoto:
             return ".png"
         }
+    }
+}
+
+// MARK: - NetworkManagerUploadProgressHandler
+
+final class NetworkManagerUploadProgressHandler: NSObject, URLSessionTaskDelegate {
+    let handler: ProgressHandler?
+    
+    init(handler: ProgressHandler?) {
+        self.handler = handler
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
+        handler?(Double(totalBytesSent/totalBytesExpectedToSend))
     }
 }
