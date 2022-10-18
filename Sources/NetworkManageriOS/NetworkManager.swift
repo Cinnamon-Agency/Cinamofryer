@@ -52,16 +52,7 @@ public enum NetworkManager {
 }
 
 // MARK: - Private
-
 private extension NetworkManager {
-    static func run<T: Decodable>(request: URLRequest, progressHandler: ProgressHandler? = nil) async throws -> T {
-        let session = URLSession.shared
-        let delegate = (progressHandler == nil) ? nil : NetworkManagerUploadProgressHandler(handler: progressHandler)
-        let (data, response) = try await session.data(for: request, delegate: delegate)
-        try validate(response)
-        return try result(from: data)
-    }
-
     static func createRequest(url: String,
                               method: HTTPMethod,
                               parameters: [String: Any]?,
@@ -133,22 +124,16 @@ private extension NetworkManager {
         return request
     }
 
-    static func encode(_ parameters: [String: Any], encoding: ParameterEncoding) throws -> Data {
-        switch encoding {
-        case .JSONEncoding:
-            return try JSONSerialization.data(withJSONObject: parameters, options: [])
-        case .URLEncoding:
-            let query = parameters.map { (key, value) in
-                if let value = value as? String {
-                    return escape(key) + "=" + escape(value)
-                } else {
-                    return escape(key) + "=" + "\(value)"
-                }
-            }.joined(separator: "&")
-            return Data(query.utf8)
-        }
+    static func run<T: Decodable>(request: URLRequest, progressHandler: ProgressHandler? = nil) async throws -> T {
+        let session = URLSession.shared
+        let delegate = (progressHandler == nil) ? nil : NetworkManagerUploadProgressHandler(handler: progressHandler)
+        let (data, response) = try await session.data(for: request, delegate: delegate)
+        try validate(response)
+        return try result(from: data)
     }
+}
 
+private extension NetworkManager {
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
            response.statusCode < 200 || response.statusCode > 300 {
@@ -169,6 +154,22 @@ private extension NetworkManager {
 // MARK: - URLEncoding
 
 private extension NetworkManager {
+    static func encode(_ parameters: [String: Any], encoding: ParameterEncoding) throws -> Data {
+        switch encoding {
+        case .JSONEncoding:
+            return try JSONSerialization.data(withJSONObject: parameters, options: [])
+        case .URLEncoding:
+            let query = parameters.map { (key, value) in
+                if let value = value as? String {
+                    return escape(key) + "=" + escape(value)
+                } else {
+                    return escape(key) + "=" + "\(value)"
+                }
+            }.joined(separator: "&")
+            return Data(query.utf8)
+        }
+    }
+
     static func escape(_ string: String) -> String {
         return string.replacingOccurrences(of: "\n", with: "\r\n")
             .addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? ""
@@ -183,103 +184,6 @@ private extension NetworkManager {
         allowed.remove("?")
         return allowed
     }()
-}
-
-// MARK: - HTTPMethod
-
-public enum HTTPMethod: Equatable {
-    case GET(query: [String: Any]? = nil)
-    case POST
-    case DELETE
-    case PUT
-
-    var raw: String {
-        switch self {
-        case .GET:
-            return "GET"
-        case .POST:
-            return "POST"
-        case .DELETE:
-            return "DELETE"
-        case .PUT:
-            return "PUT"
-        }
-    }
-
-    public static func == (lhs: HTTPMethod, rhs: HTTPMethod) -> Bool {
-        switch (lhs, rhs) {
-        case (.GET, .GET):
-            return true
-        case (.POST, .POST):
-            return true
-        case (.DELETE, .DELETE):
-            return true
-        case (.PUT, .PUT):
-            return true
-        default:
-            return false
-        }
-    }
-}
-
-// MARK: - ContentType
-
-public enum ContentType: String {
-    case JSON = "application/json"
-    case formUrlEncoded = "application/x-www-form-urlencoded; charset=utf-8"
-
-    var encoding: ParameterEncoding {
-        switch self {
-        case .JSON:
-            return .JSONEncoding
-        case .formUrlEncoded:
-            return .URLEncoding
-        }
-    }
-}
-
-// MARK: - ParameterEncoding
-
-public enum ParameterEncoding {
-    case JSONEncoding
-    case URLEncoding
-}
-
-// MARK: - UploadRequestType
-
-public enum UploadRequestType {
-    case binary
-    case multipartFormData
-}
-
-// MARK: - UploadData
-
-public struct UploadData {
-    let name: String
-    let data: Data
-    let type: DataType
-
-    public enum DataType {
-        case jpegPhoto, pngPhoto
-    }
-
-    var mimeType: String {
-        switch type {
-        case .jpegPhoto:
-            return "image/jpeg"
-        case .pngPhoto:
-            return "image/png"
-        }
-    }
-
-    var fileExtension: String {
-        switch type {
-        case .jpegPhoto:
-            return ".jpeg"
-        case .pngPhoto:
-            return ".png"
-        }
-    }
 }
 
 // MARK: - NetworkManagerUploadProgressHandler
