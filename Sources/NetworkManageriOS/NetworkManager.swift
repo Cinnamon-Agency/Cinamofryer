@@ -3,6 +3,15 @@ import Foundation
 public typealias ProgressHandler = (Double) -> Void
 
 public enum NetworkManager {
+    /// Used for a basic API request.
+    /// Async/await pattern, throws NetworkManagerError error.
+    /// - Parameters:
+    ///   - url: String URL
+    ///   - method: type HTTPMethod. Note: GET method receives query params
+    ///   - parameters: Default nil. Mostly used for POST and PUT request.
+    ///   - contentType: Default JSON type.
+    ///   - headers: Default nil. Mostly used for JWT token.
+    /// - Returns: Generic API response type.
     public static func request<T: Decodable>(url: String,
                                              method: HTTPMethod,
                                              parameters: [String: Any]? = nil,
@@ -16,6 +25,16 @@ public enum NetworkManager {
         return try await run(request: request)
     }
 
+    /// Used for upload image file. Works with progress delegate.
+    /// Async/await pattern,  throws NetworkManagerError error.
+    /// - Parameters:
+    ///   - url: String URL
+    ///   - method: Works only with POST and PUT request
+    ///   - data: UploadData type
+    ///   - requestType: UploadRequestType
+    ///   - headers: Default nil. Mostly used for JWT token.
+    ///   - progressHandler:To track upload progess.
+    /// - Returns: Generic API response type.
     public static func uploadRequest<T: Decodable>(url: String,
                                                    method: HTTPMethod,
                                                    data: UploadData,
@@ -42,25 +61,25 @@ private extension NetworkManager {
         try validate(response)
         return try result(from: data)
     }
-    
+
     static func createRequest(url: String,
                               method: HTTPMethod,
                               parameters: [String: Any]?,
                               contentType: ContentType,
                               headers: [String: String]?) throws -> URLRequest {
         guard var components = URLComponents(string: url) else { throw NetworkManagerError.invalidURL }
-    
+
         if case .GET(let queryParameters) = method, let queryParameters = queryParameters {
             components.queryItems = queryParameters.map { (key: String, value: Any) in
                 return URLQueryItem(name: key, value: "\(value)")
             }
         }
-        
+
         guard let url = components.url else { throw NetworkManagerError.invalidURL }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method.raw
-        
+
         if let parameters = parameters {
             let bodyParams = try NetworkManager.encode(parameters, encoding: contentType.encoding)
             request.httpBody = bodyParams
@@ -73,19 +92,19 @@ private extension NetworkManager {
 
         return request
     }
-    
+
     static func createUploadRequest(url: String,
                                     method: HTTPMethod,
                                     data: UploadData,
                                     requestType: UploadRequestType,
                                     headers: [String: String]?) throws -> URLRequest {
         guard let url = URL(string: url) else { throw NetworkManagerError.invalidURL }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = method.raw
-        
+
         var body = Data()
-        
+
         switch requestType {
         case .binary:
             body.append(data.data)
@@ -93,7 +112,7 @@ private extension NetworkManager {
         case .multipartFormData:
             let boundary: String = UUID().uuidString
             let contentDisposition = "Content-Disposition: form-data; name=\"\(data.name)\""
-    
+
             body.append(Data("--\(boundary)\r\n".utf8))
             body.append(Data("\(contentDisposition); filename=\"\(data.name)\(data.fileExtension)\"\r\n".utf8))
             body.append(Data("Content-Type: \(data.mimeType)\r\n".utf8))
@@ -101,19 +120,19 @@ private extension NetworkManager {
             body.append(data.data)
             body.append(Data("\r\n".utf8))
             body.append(Data("--\(boundary)--\r\n".utf8))
-            
+
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         }
-        
+
         request.httpBody = body
-    
+
         if let headers = headers {
             request.allHTTPHeaderFields = headers
         }
 
         return request
     }
-    
+
     static func encode(_ parameters: [String: Any], encoding: ParameterEncoding) throws -> Data {
         switch encoding {
         case .JSONEncoding:
@@ -144,7 +163,7 @@ private extension NetworkManager {
             throw error
         }
     }
-    
+
 }
 
 // MARK: - URLEncoding
@@ -155,7 +174,7 @@ private extension NetworkManager {
             .addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? ""
             .replacingOccurrences(of: " ", with: "+")
     }
-    
+
     static let allowedCharacters: CharacterSet = {
         var allowed = CharacterSet.urlQueryAllowed
         allowed.insert(" ")
@@ -173,7 +192,7 @@ public enum HTTPMethod: Equatable {
     case POST
     case DELETE
     case PUT
-    
+
     var raw: String {
         switch self {
         case .GET:
@@ -186,7 +205,7 @@ public enum HTTPMethod: Equatable {
             return "PUT"
         }
     }
-    
+
     public static func == (lhs: HTTPMethod, rhs: HTTPMethod) -> Bool {
         switch (lhs, rhs) {
         case (.GET, .GET):
@@ -208,7 +227,7 @@ public enum HTTPMethod: Equatable {
 public enum ContentType: String {
     case JSON = "application/json"
     case formUrlEncoded = "application/x-www-form-urlencoded; charset=utf-8"
-    
+
     var encoding: ParameterEncoding {
         switch self {
         case .JSON:
@@ -239,11 +258,11 @@ public struct UploadData {
     let name: String
     let data: Data
     let type: DataType
-    
+
     public enum DataType {
         case jpegPhoto, pngPhoto
     }
-    
+
     var mimeType: String {
         switch type {
         case .jpegPhoto:
@@ -252,7 +271,7 @@ public struct UploadData {
             return "image/png"
         }
     }
-    
+
     var fileExtension: String {
         switch type {
         case .jpegPhoto:
@@ -267,12 +286,12 @@ public struct UploadData {
 
 final class NetworkManagerUploadProgressHandler: NSObject, URLSessionTaskDelegate {
     let handler: ProgressHandler?
-    
+
     init(handler: ProgressHandler?) {
         self.handler = handler
     }
-    
+
     func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
-        handler?(Double(totalBytesSent/totalBytesExpectedToSend))
+        handler?(Double(totalBytesSent / totalBytesExpectedToSend))
     }
 }
