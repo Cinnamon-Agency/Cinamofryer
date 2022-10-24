@@ -151,13 +151,17 @@ private extension NetworkManager {
 
 }
 
-// MARK: - URLEncoding
+// MARK: - Encoding
 
 private extension NetworkManager {
     static func encode(_ parameters: [String: Any], encoding: ParameterEncoding) throws -> Data {
         switch encoding {
         case .JSONEncoding:
             return try JSONSerialization.data(withJSONObject: parameters, options: [])
+
+
+        // For more details about URL encoding
+        // https://useyourloaf.com/blog/how-to-percent-encode-a-url-string/
         case .URLEncoding:
             let query = parameters.map { (key, value) in
                 if let value = value as? String {
@@ -169,7 +173,11 @@ private extension NetworkManager {
             return Data(query.utf8)
         }
     }
+}
 
+// MARK: - URLEncoding
+
+private extension NetworkManager {
     static func escape(_ string: String) -> String {
         return string.replacingOccurrences(of: "\n", with: "\r\n")
             .addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? ""
