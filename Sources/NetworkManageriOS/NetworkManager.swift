@@ -41,7 +41,7 @@ public enum NetworkManager {
                                                    requestType: UploadRequestType,
                                                    headers: [String: String]? = nil,
                                                    progressHandler: ProgressHandler? = nil) async throws -> T {
-        guard method == .POST || method == .PUT else { throw NetworkManagerError.invalidHTTPMethod }
+        guard method == .POST || method == .PUT || method == .PATCH else { throw NetworkManagerError.invalidHTTPMethod }
         let request = try createUploadRequest(url: url,
                                               method: method,
                                               data: data,
