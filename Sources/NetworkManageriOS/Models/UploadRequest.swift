@@ -10,6 +10,12 @@ public struct UploadData {
     let data: Data
     let type: DataType
 
+    public init(name: String, data: Data, type: UploadData.DataType) {
+        self.name = name
+        self.data = data
+        self.type = type
+    }
+
     public enum DataType {
         case jpegPhoto, pngPhoto
     }
