@@ -2,99 +2,156 @@
 
 Cinnanet is an HTTP networking library written in Swift.
 
-Simple network manager used for simple applications that need network calls.
+A lightweight networking manager used for simple and clear network calls.
 
 ## Installation
 
-#### Swift Package Manager
+### Swift Package Manager
 
-1. Using Xcode 11 or higher go to File > Swift Packages > Add Package Dependency
-2. Paste the project URL: https://github.com/cinnanet/cinnanet.git
-3. Click on next, select the project target and click finish
-4. `Import Cinnanet`
+Cinnanet can be installed via the official [Swift Package Manager](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app).
+
+1. Go to `File` > `Swift Packages` > `Add Package Dependency`
+2. Paste the project URL: `https://github.com/cinnanet/cinnanet.git`
+3. Click on next, select the project target and click finish.
+
+Then simply `import Cinnanet` wherever you’d like to use it.
+
+
+## Requirements
+
+* Xcode 13.0+
+* iOS 15.0+
+
+Works only with the `async`/`await` pattern.
+
 
 ## Usage
 
-Works only with Async/Await pattern.
-
 ### Basic API request
 
+Used for basic API calls.
+
 ``` swift
-    public static func request<T: Decodable>(url: String,
-                                             method: HTTPMethod,
-                                             parameters: [String: Any]? = nil,
-                                             contentType: ContentType = .JSON,
-                                             headers: [String: String]? = nil) async throws -> T {
-        let request = try createRequest(url: url,
-                                        method: method,
-                                        parameters: parameters,
-                                        contentType: contentType,
-                                        headers: headers)
-        return try await run(request: request)
-    }
+public static func request<T: Decodable>(url: String,
+                                         method: HTTPMethod,
+                                         parameters: [String: Any]? = nil,
+                                         contentType: ContentType = .JSON,
+                                         headers: [String: String]? = nil) async throws -> T
 ```
 
-####  GET request 
- 
+#### HTTP Methods
 
-```swift
-func getAllRepos(url: String) -> ApiResponse<[Repo]> {
-    async try NetworkManager.request(url: url, method: .GET)
+Use `GET`, `POST`, `DELETE`, `PUT` & `PATCH` methods to make network calls.
+
+``` swift
+public enum HTTPMethod {
+    case GET(query: [String: Any]? = nil)
+    case POST
+    case DELETE
+    case PUT
+    case PATCH
 }
 ```
 
-#### Example POST request
- 
+####  Examples 
+
+#####  GET request 
+
+
+```swift
+func getAllUsers(url: String) async throws -> ApiResponse<[User]> {
+    try await NetworkManager.request(url: url, method: .GET())
+}
+```
+
+##### POST request
+
 
 ``` swift
-  func verifyEmail(url: String) async throws -> ApiResponse<EmailVerificationResponse> {
-        try await NetworkManager.request(url,
-                                             method: .POST,
-                                             parameters: ["email": "dummyEmail"],
-                                             contentType = .JSON,
-                                             headers: SessionManager.shared.authorizationHeader){
-    }
+func verifyEmail(url: String) async throws -> ApiResponse<EmailVerificationResponse> {
+    try await NetworkManager.request(url: url,
+                                     method: .POST,
+                                     parameters: ["email": "example@mail.com"],
+                                     contentType: .JSON,
+                                     headers: SessionManager.shared.authorizationHeader)
+}
 ```
 
 ### Upload image API request
 
-Used for basic API call and upload image.
+Used for a basic image upload.
 
+``` swift
+public static func uploadRequest<T: Decodable>(url: String,
+                                               method: HTTPMethod,
+                                               data: UploadData,
+                                               requestType: UploadRequestType,
+                                               headers: [String: String]? = nil,
+                                               progressHandler: ProgressHandler? = nil) async throws -> T
+```
 
-### TODO
+#### Upload Request Type
+
+``` swift
+public enum UploadRequestType {
+    case binary
+    case multipartFormData
+}
+```
+
+#### Example
+
+``` swift
+func uploadPhoto(url: String, data: Data) async throws -> Bool {
+    try await NetworkManager.uploadRequest(url: url,
+                                           method: .POST,
+                                           data: UploadData(name: "fileName", data: data, type: .pngPhoto),
+                                           requestType: .multipartFormData,
+                                           progressHandler: { progress in
+                                              // Do something
+                                           })
+}
+```
+
+You can pass the `progressUpload` handler to this method whenever you need to show the user the progress of their upload.
 
 ### Error handling
 
-Throws NetworkManagerError error.
+Throws `NetworkManagerError`.
 
 ``` swift
 enum NetworkManagerError: Error {
-    // If the error is Out of the range <200, 300>. We want to handle every error with status code.
+    // If the response status code is not in [200, 299]
     case invalidStatusCode(code: Int)
     
-    // When converting url property from String to URL data model
+    // If the passed url string cannot be converted to URL data model
     case invalidURL
     
-    // If for example set HTTPMethod type GET for image upload request
+    // If the passed HTTPMethod is not allowed (e.g. GET for image upload request)
     case invalidHTTPMethod
 }
 ```
 
-If the error is caused by JSONDecoder the error should be logged in console to see which property of the data model is false.
-Same for JSONEncoding and JSONSerialization.
+If the error is caused by `JSONDecoder`, `JSONEncoder` or `JSONSerialization` - you'll probably want to log it to the console to see the exact source of the problem.
+
 
 ### Decoding
 
-Decoding response in generic type T. We mostly use model:
+The response is decoded to generic type `T`.
+
+We mainly using the following model for the API response:
+
 ``` swift
-ApiResponse<T> {
-    let code: String
+struct ApiResponse<T>: Decodable where T: Decodable {
+    let code: Int
     let message: String
     let data: T
-} 
+}
 ```
 
 ### Encoding
+
+If you need to send a request using URL encoded form data, set `contentType` to `.formUrlEncoded`. Default is `.JSON`.
 
 ``` swift
 public enum ContentType: String {
