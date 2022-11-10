@@ -25,7 +25,7 @@ public enum NetworkManager {
         return try await run(request: request)
     }
 
-    /// Used for upload image file. Works with progress delegate.
+    /// Used for image file upload. Works with progress delegate.
     /// Async/await pattern,  throws NetworkManagerError error.
     /// - Parameters:
     ///   - url: String URL
@@ -41,7 +41,7 @@ public enum NetworkManager {
                                                    requestType: UploadRequestType,
                                                    headers: [String: String]? = nil,
                                                    progressHandler: ProgressHandler? = nil) async throws -> T {
-        guard method == .POST || method == .PUT else { throw NetworkManagerError.invalidHTTPMethod }
+        guard method == .POST || method == .PUT || method == .PATCH else { throw NetworkManagerError.invalidHTTPMethod }
         let request = try createUploadRequest(url: url,
                                               method: method,
                                               data: data,
@@ -136,17 +136,13 @@ private extension NetworkManager {
 private extension NetworkManager {
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
-           response.statusCode < 200 || response.statusCode > 300 {
+           response.statusCode < 200 || response.statusCode >= 300 {
             throw NetworkManagerError.invalidStatusCode(code: response.statusCode)
         }
     }
 
     static func result<T: Decodable>(from data: Data) throws -> T {
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch let error {
-            throw error
-        }
+        return try JSONDecoder().decode(T.self, from: data)
     }
 
 }
