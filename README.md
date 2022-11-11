@@ -59,8 +59,11 @@ public enum HTTPMethod {
 
 
 ```swift
-func getAllUsers(url: String) async throws -> ApiResponse<[User]> {
-    try await NetworkManager.request(url: url, method: .GET())
+func fetch() async throws -> ApiResponse<[User]> {
+    return try await NetworkManager.request(
+        url: BuildConfiguration.shared.baseURL + Endpoints.Users.users.path,
+        method: .GET()
+    )
 }
 ```
 
@@ -68,12 +71,13 @@ func getAllUsers(url: String) async throws -> ApiResponse<[User]> {
 
 
 ``` swift
-func verifyEmail(url: String) async throws -> ApiResponse<EmailVerificationResponse> {
-    try await NetworkManager.request(url: url,
-                                     method: .POST,
-                                     parameters: ["email": "example@mail.com"],
-                                     contentType: .JSON,
-                                     headers: SessionManager.shared.authorizationHeader)
+func add(user: User) async throws -> ApiResponse<User> {
+    return try await NetworkManager.request(
+        url: BuildConfiguration.shared.baseURL + Endpoints.Users.users.path,
+        method: .POST,
+        parameters: try user.asDictionary(),
+        headers: SessionManager.shared.authorizationHeader
+    )
 }
 ```
 
