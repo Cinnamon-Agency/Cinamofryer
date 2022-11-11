@@ -1,8 +1,10 @@
 # Cinnanet
 
 Cinnanet is an HTTP networking library written in Swift.
-
 A lightweight networking manager used for simple and clear network calls.
+
+We use Cinnanet in our iOS project template:
+https://github.com/Cinnamon-Agency/template-ios
 
 ## Installation
 
