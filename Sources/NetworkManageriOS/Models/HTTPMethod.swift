@@ -5,6 +5,7 @@ public enum HTTPMethod: Equatable {
     case POST
     case DELETE
     case PUT
+    case PATCH
 
     var raw: String {
         switch self {
@@ -16,21 +17,12 @@ public enum HTTPMethod: Equatable {
             return "DELETE"
         case .PUT:
             return "PUT"
+        case .PATCH:
+            return "PATCH"
         }
     }
 
     public static func == (lhs: HTTPMethod, rhs: HTTPMethod) -> Bool {
-        switch (lhs, rhs) {
-        case (.GET, .GET):
-            return true
-        case (.POST, .POST):
-            return true
-        case (.DELETE, .DELETE):
-            return true
-        case (.PUT, .PUT):
-            return true
-        default:
-            return false
-        }
+        return lhs.raw == rhs.raw
     }
 }

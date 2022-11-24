@@ -13,3 +13,9 @@ public enum ContentType: String {
         }
     }
 }
+
+public enum ParameterEncoding {
+    case JSONEncoding
+    case URLEncoding
+}
+

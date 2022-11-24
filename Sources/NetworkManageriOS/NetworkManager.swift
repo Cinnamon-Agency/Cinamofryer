@@ -25,7 +25,7 @@ public enum NetworkManager {
         return try await run(request: request)
     }
 
-    /// Used for upload image file. Works with progress delegate.
+    /// Used for image file upload. Works with progress delegate.
     /// Async/await pattern,  throws NetworkManagerError error.
     /// - Parameters:
     ///   - url: String URL
@@ -41,7 +41,7 @@ public enum NetworkManager {
                                                    requestType: UploadRequestType,
                                                    headers: [String: String]? = nil,
                                                    progressHandler: ProgressHandler? = nil) async throws -> T {
-        guard method == .POST || method == .PUT else { throw NetworkManagerError.invalidHTTPMethod }
+        guard method == .POST || method == .PUT || method == .PATCH else { throw NetworkManagerError.invalidHTTPMethod }
         let request = try createUploadRequest(url: url,
                                               method: method,
                                               data: data,
@@ -136,28 +136,28 @@ private extension NetworkManager {
 private extension NetworkManager {
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
-           response.statusCode < 200 || response.statusCode > 300 {
+           response.statusCode < 200 || response.statusCode >= 300 {
             throw NetworkManagerError.invalidStatusCode(code: response.statusCode)
         }
     }
 
     static func result<T: Decodable>(from data: Data) throws -> T {
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch let error {
-            throw error
-        }
+        return try JSONDecoder().decode(T.self, from: data)
     }
 
 }
 
-// MARK: - URLEncoding
+// MARK: - Encoding
 
 private extension NetworkManager {
     static func encode(_ parameters: [String: Any], encoding: ParameterEncoding) throws -> Data {
         switch encoding {
         case .JSONEncoding:
             return try JSONSerialization.data(withJSONObject: parameters, options: [])
+
+
+        // For more details about URL encoding
+        // https://useyourloaf.com/blog/how-to-percent-encode-a-url-string/
         case .URLEncoding:
             let query = parameters.map { (key, value) in
                 if let value = value as? String {
@@ -169,7 +169,11 @@ private extension NetworkManager {
             return Data(query.utf8)
         }
     }
+}
 
+// MARK: - URLEncoding
+
+private extension NetworkManager {
     static func escape(_ string: String) -> String {
         return string.replacingOccurrences(of: "\n", with: "\r\n")
             .addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? ""
