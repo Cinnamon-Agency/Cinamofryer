@@ -4,7 +4,7 @@ public typealias ProgressHandler = (Double) -> Void
 
 public enum Cinamofryer {
     /// Used for a basic API request.
-    /// Async/await pattern, throws NetworkManagerError error.
+    /// Async/await pattern, throws CinamofryerError error.
     /// - Parameters:
     ///   - url: String URL
     ///   - method: type HTTPMethod. Note: GET method receives query params
@@ -26,7 +26,7 @@ public enum Cinamofryer {
     }
 
     /// Used for image file upload. Works with progress delegate.
-    /// Async/await pattern,  throws NetworkManagerError error.
+    /// Async/await pattern,  throws CinamofryerError error.
     /// - Parameters:
     ///   - url: String URL
     ///   - method: Works only with POST and PUT request
@@ -41,7 +41,7 @@ public enum Cinamofryer {
                                                    requestType: UploadRequestType,
                                                    headers: [String: String]? = nil,
                                                    progressHandler: ProgressHandler? = nil) async throws -> T {
-        guard method == .POST || method == .PUT || method == .PATCH else { throw NetworkManagerError.invalidHTTPMethod }
+        guard method == .POST || method == .PUT || method == .PATCH else { throw CinamofryerError.invalidHTTPMethod }
         let request = try createUploadRequest(url: url,
                                               method: method,
                                               data: data,
@@ -58,7 +58,7 @@ private extension Cinamofryer {
                               parameters: [String: Any]?,
                               contentType: ContentType,
                               headers: [String: String]?) throws -> URLRequest {
-        guard var components = URLComponents(string: url) else { throw NetworkManagerError.invalidURL }
+        guard var components = URLComponents(string: url) else { throw CinamofryerError.invalidURL }
 
         if case .GET(let queryParameters) = method, let queryParameters = queryParameters {
             components.queryItems = queryParameters.map { (key: String, value: Any) in
@@ -66,7 +66,7 @@ private extension Cinamofryer {
             }
         }
 
-        guard let url = components.url else { throw NetworkManagerError.invalidURL }
+        guard let url = components.url else { throw CinamofryerError.invalidURL }
 
         var request = URLRequest(url: url)
         request.httpMethod = method.raw
@@ -89,7 +89,7 @@ private extension Cinamofryer {
                                     data: UploadData,
                                     requestType: UploadRequestType,
                                     headers: [String: String]?) throws -> URLRequest {
-        guard let url = URL(string: url) else { throw NetworkManagerError.invalidURL }
+        guard let url = URL(string: url) else { throw CinamofryerError.invalidURL }
 
         var request = URLRequest(url: url)
         request.httpMethod = method.raw
@@ -126,7 +126,7 @@ private extension Cinamofryer {
 
     static func run<T: Decodable>(request: URLRequest, progressHandler: ProgressHandler? = nil) async throws -> T {
         let session = URLSession.shared
-        let delegate = (progressHandler == nil) ? nil : NetworkManagerUploadProgressHandler(handler: progressHandler)
+        let delegate = (progressHandler == nil) ? nil : CinamofryerUploadProgressHandler(handler: progressHandler)
         let (data, response) = try await session.data(for: request, delegate: delegate)
         try validate(response)
         return try result(from: data)
@@ -137,7 +137,7 @@ private extension Cinamofryer {
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
            response.statusCode < 200 || response.statusCode >= 300 {
-            throw NetworkManagerError.invalidStatusCode(code: response.statusCode)
+            throw CinamofryerError.invalidStatusCode(code: response.statusCode)
         }
     }
 
@@ -190,9 +190,9 @@ private extension Cinamofryer {
     }()
 }
 
-// MARK: - NetworkManagerUploadProgressHandler
+// MARK: - CinamofryerUploadProgressHandler
 
-final class NetworkManagerUploadProgressHandler: NSObject, URLSessionTaskDelegate {
+final class CinamofryerUploadProgressHandler: NSObject, URLSessionTaskDelegate {
     let handler: ProgressHandler?
 
     init(handler: ProgressHandler?) {

@@ -62,7 +62,7 @@ public enum HTTPMethod {
 
 ```swift
 func fetch() async throws -> ApiResponse<[User]> {
-    return try await NetworkManager.request(
+    return try await Cinamofryer.request(
         url: BuildConfiguration.shared.baseURL + Endpoints.Users.users.path,
         method: .GET()
     )
@@ -74,7 +74,7 @@ func fetch() async throws -> ApiResponse<[User]> {
 
 ``` swift
 func add(user: User) async throws -> ApiResponse<User> {
-    return try await NetworkManager.request(
+    return try await Cinamofryer.request(
         url: BuildConfiguration.shared.baseURL + Endpoints.Users.users.path,
         method: .POST,
         parameters: try user.asDictionary(),
@@ -109,7 +109,7 @@ public enum UploadRequestType {
 
 ``` swift
 func uploadPhoto(url: String, data: Data) async throws -> Bool {
-    try await NetworkManager.uploadRequest(url: url,
+    try await Cinamofryer.uploadRequest(url: url,
                                            method: .POST,
                                            data: UploadData(name: "fileName", data: data, type: .pngPhoto),
                                            requestType: .multipartFormData,
@@ -123,10 +123,10 @@ You can pass the `progressUpload` handler to this method whenever you need to sh
 
 ### Error handling
 
-Throws `NetworkManagerError`.
+Throws `CinamofryerError`.
 
 ``` swift
-enum NetworkManagerError: Error {
+enum CinamofryerError: Error {
     // If the response status code is not in [200, 299]
     case invalidStatusCode(code: Int)
     
