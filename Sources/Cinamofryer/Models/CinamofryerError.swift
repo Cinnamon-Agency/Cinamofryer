@@ -1,6 +1,6 @@
 import Foundation
 
-enum NetworkManagerError: Error {
+enum CinamofryerError: Error {
     case invalidStatusCode(code: Int)
     case invalidURL
     case invalidHTTPMethod
