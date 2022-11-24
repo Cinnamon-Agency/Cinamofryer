@@ -2,7 +2,7 @@ import Foundation
 
 public typealias ProgressHandler = (Double) -> Void
 
-public enum NetworkManager {
+public enum Cinamofryer {
     /// Used for a basic API request.
     /// Async/await pattern, throws NetworkManagerError error.
     /// - Parameters:
@@ -52,7 +52,7 @@ public enum NetworkManager {
 }
 
 // MARK: - Private
-private extension NetworkManager {
+private extension Cinamofryer {
     static func createRequest(url: String,
                               method: HTTPMethod,
                               parameters: [String: Any]?,
@@ -72,7 +72,7 @@ private extension NetworkManager {
         request.httpMethod = method.raw
 
         if let parameters = parameters {
-            let bodyParams = try NetworkManager.encode(parameters, encoding: contentType.encoding)
+            let bodyParams = try Cinamofryer.encode(parameters, encoding: contentType.encoding)
             request.httpBody = bodyParams
             request.setValue(contentType.rawValue, forHTTPHeaderField: "Content-Type")
         }
@@ -133,7 +133,7 @@ private extension NetworkManager {
     }
 }
 
-private extension NetworkManager {
+private extension Cinamofryer {
     static func validate(_ response: URLResponse) throws {
         if let response = response as? HTTPURLResponse,
            response.statusCode < 200 || response.statusCode >= 300 {
@@ -149,7 +149,7 @@ private extension NetworkManager {
 
 // MARK: - Encoding
 
-private extension NetworkManager {
+private extension Cinamofryer {
     static func encode(_ parameters: [String: Any], encoding: ParameterEncoding) throws -> Data {
         switch encoding {
         case .JSONEncoding:
@@ -173,7 +173,7 @@ private extension NetworkManager {
 
 // MARK: - URLEncoding
 
-private extension NetworkManager {
+private extension Cinamofryer {
     static func escape(_ string: String) -> String {
         return string.replacingOccurrences(of: "\n", with: "\r\n")
             .addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? ""

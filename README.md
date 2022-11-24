@@ -1,22 +1,22 @@
-# Cinnanet
+# Cinamofryer
 
-Cinnanet is an HTTP networking library written in Swift.  
+Cinamofryer is an HTTP networking library written in Swift.  
 A lightweight networking manager used for simple and clear network calls.
 
-We use Cinnanet in our iOS project template:  
+We use Cinamofryer in our iOS project template:  
 https://github.com/Cinnamon-Agency/template-ios
 
 ## Installation
 
 ### Swift Package Manager
 
-Cinnanet can be installed via the official [Swift Package Manager](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app).
+Cinamofryer can be installed via the official [Swift Package Manager](https://developer.apple.com/documentation/xcode/adding-package-dependencies-to-your-app).
 
 1. Go to `File` > `Swift Packages` > `Add Package Dependency`
-2. Paste the project URL: `https://github.com/cinnanet/cinnanet.git`
+2. Paste the project URL: `https://github.com/Cinnamon-Agency/Cinamofryer`
 3. Click on next, select the project target and click finish.
 
-Then simply `import Cinnanet` wherever you’d like to use it.
+Then simply `import Cinamofryer` wherever you’d like to use it.
 
 
 ## Requirements
