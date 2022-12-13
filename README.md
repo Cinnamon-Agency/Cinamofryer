@@ -1,6 +1,3 @@
-# Cinamofryer
-
-<img src="https://img.shields.io/badge/Version-1.0.0-blue"/>
 
 <p align="center">
 <img src="https://user-images.githubusercontent.com/84778698/207351902-d47fcfac-8c51-472d-969f-a43d62453ee6.png" width="35%" alt="Cinamofrayer Logo" />
